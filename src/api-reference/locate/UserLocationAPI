@@ -1,0 +1,594 @@
+Partner App integration with Concur User Location API service
+The API is for Concur locate partners to post the user location details of their or concur customers. This helps the partners to provide comprehensive duty of care before, during and after  of travellers using Concur Locate product.
+The partner application communicates and publish the location information by making a HTTP Restful call to Locate API service. 
+Partner Authentication Process:
+Partner apps before calling the UserLocationAPI service, they need to be authenticated. Getting access to any concur product api service, is a two-step process.
+Step 1:  Each partner will be issued with a client_id and client_secret. With those details, the partner app will make a http(s) Auth call then a JWT (Json Web Token) will be returned on successful authentication.
+curl -X POST \ https://rqa3.api.concursolutions.com/oauth2/v0/token \ -H 'content-type: application/x-www-form-urlencoded' \ -d 'client_id=${issued_client_id}&client_secret=${issued_client_secret}&grant_type=client_credentials' 
+Step 2: Using a JWT from Step1 and set it in the header of a JSON request and call the api service then the service returns 200 or 400 or 500 depending on whether the request is validated and processed successfully or not.
+curl -X POST https://rqa3.api.concursolutions.com/locate/api/v1/user/location -H 'authorization: Bearer ${JWT}'\
+	•	Authentication and Authorisation for these services is done using JSON Web Token - JWT.  
+	◦	This API requires a valid JWT to be in the Authorization header (RCF72335): For e.g:
+￼
+	•	Response Codes 
+	◦	200 (OK) : When the request is successful
+	◦	400 (BadRequest) : When the validations on the incoming JSON fail then the client will be responded with an HTTP 400 error. Sufficient Meaningful information will be a part of the exception which will notify the client of the details of the failed validations. Scenarios which are included under this exception are as follows: 
+	▪	Transaction type incorrect (other than Add or Cancel) or not passed in the JSON
+	▪	The id in the "client" section of the JSON is not correct
+	▪	IATA Code or Lat/Long is not passed in the request. Either of the two should be passed in. If both are passed in then Lat/Long will take precedence
+	◦	500 (Internal Server Error) : When there are exception encountered during the process then a HTTP 500 code will be returned. The cause of the exception will be logged for investigation and sufficient meaningful information will be sent back to the client.  
+	▪	If the processing after the inital validations encounters an error then this exception will be thrown. The error message is intentionally generic in this case to prevent exposing 
+	▪	application information to the client.
+ 
+API URIs
+The service is available in three locations – US, EMEA and third is a non-production one(RQA3) for internal testing and partners to test their apps during the development stage.
+US - https://us.api.concursolutions.com
+EMEA - https://emea.api.concursolutions.com 
+Test - https://rqa3.api.concursolutions.com 
+JSON Schema
+{
+  "definitions": {},
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "$id": "http://example.com/example.json",
+  "type": "object",
+  "properties": {
+    "userLocations": {
+      "$id": "/properties/userLocations",
+      "type": "array",
+      "items": {
+        "$id": "/properties/userLocations/items",
+        "type": "object",
+        "properties": {
+          "client": {
+            "$id": "/properties/userLocations/items/properties/client",
+            "type": "object",
+            "properties": {
+              "id": {
+                "$id": "/properties/userLocations/items/properties/client/properties/id",
+                "type": "string",
+                "title": "The Id Schema",
+                "description": "This maps to the top-level corporation and must be configured in the locate service before sending location data to the API service Ex Concur",
+                "default": "",
+                "examples": [
+                  "CTG"
+                ]
+              },
+              "firstSubLevel": {
+                "$id": "/properties/userLocations/items/properties/client/properties/firstSubLevel",
+                "type": "string",
+                "title": "The Firstsublevel Schema",
+                "description": "This is the child corporation which is one level below the aforementioned top level corporation. E.g Concur UK",
+                "default": "",
+                "examples": [
+                  "Test_SL1_Demo"
+                ]
+              },
+              "secondSubLevel": {
+                "$id": "/properties/userLocations/items/properties/client/properties/secondSubLevel",
+                "type": "string",
+                "title": "The Secondsublevel Schema",
+                "description": "This is the second level corporation which is below the first level . E.g Concur Maidenhead",
+                "default": "",
+                "examples": [
+                  "Test_SL2_Demo"
+                ]
+              }
+            }
+          },
+          "users": {
+            "$id": "/properties/userLocations/items/properties/users",
+            "type": "array",
+            "items": {
+              "$id": "/properties/userLocations/items/properties/users/items",
+              "type": "object",
+              "properties": {
+                "userId": {
+                  "$id": "/properties/userLocations/items/properties/users/items/properties/userId",
+                  "type": "integer",
+                  "title": "The Userid Schema",
+                  "description": "An explanation about the purpose of this instance.",
+                  "default": 0,
+                  "examples": [
+                    0
+                  ]
+                },
+                "firstName": {
+                  "$id": "/properties/userLocations/items/properties/users/items/properties/firstName",
+                  "type": "string",
+                  "title": "The Firstname Schema",
+                  "description": "First name of the traveller",
+                  "default": "",
+                  "examples": [
+                    "Test"
+                  ]
+                },
+                "lastName": {
+                  "$id": "/properties/userLocations/items/properties/users/items/properties/lastName",
+                  "type": "string",
+                  "title": "The Lastname Schema",
+                  "description": "Second name of the traveller",
+                  "default": "",
+                  "examples": [
+                    "User"
+                  ]
+                },
+                "email": {
+                  "$id": "/properties/userLocations/items/properties/users/items/properties/email",
+                  "type": "string",
+                  "title": "The Email Schema",
+                  "description": "Email",
+                  "default": "",
+                  "examples": [
+                    "clientOneXML@tuser.com"
+                  ]
+                },
+                "employeeId": {
+                  "$id": "/properties/userLocations/items/properties/users/items/properties/employeeId",
+                  "type": "string",
+                  "title": "The Employeeid Schema",
+                  "description": "EmployeeId",
+                  "default": "",
+                  "examples": [
+                    "Cli123"
+                  ]
+                },
+                "mobileCountryCode": {
+                  "$id": "/properties/userLocations/items/properties/users/items/properties/mobileCountryCode",
+                  "type": "string",
+                  "title": "The Mobilecountrycode Schema",
+                  "description": "Country code for mobile",
+                  "default": "",
+                  "examples": [
+                    "string"
+                  ]
+                },
+                "mobile": {
+                  "$id": "/properties/userLocations/items/properties/users/items/properties/mobile",
+                  "type": "string",
+                  "title": "The Mobile Schema",
+                  "description": "Mobile number without country code",
+                  "default": "",
+                  "examples": [
+                    "442345623456"
+                  ]
+                },
+                "optedIn": {
+                  "$id": "/properties/userLocations/items/properties/users/items/properties/optedIn",
+                  "type": "boolean",
+                  "title": "The Optedin Schema",
+                  "description": "whether the traveller has opted in to receive SMS messages or not",
+                  "default": false,
+                  "examples": [
+                    true
+                  ]
+                },
+                "concurLoginId": {
+                  "$id": "/properties/userLocations/items/properties/users/items/properties/concurLoginId",
+                  "type": "string",
+                  "title": "The Concurloginid Schema",
+                  "description": "Concurloginid",
+                  "default": "",
+                  "examples": [
+                    ""
+                  ]
+                },
+                "affiliation": {
+                  "$id": "/properties/userLocations/items/properties/users/items/properties/affiliation",
+                  "type": "string",
+                  "title": "The Affiliation Schema",
+                  "description": "Type of traveller (e.g Student, Faculty etc) ",
+                  "default": "",
+                  "examples": [
+                    "Student"
+                  ]
+                }
+              }
+            }
+          },
+          "locations": {
+            "$id": "/properties/userLocations/items/properties/locations",
+            "type": "array",
+            "items": {
+              "$id": "/properties/userLocations/items/properties/locations/items",
+              "type": "object",
+              "properties": {
+                "locationId": {
+                  "$id": "/properties/userLocations/items/properties/locations/items/properties/locationId",
+                  "type": "integer",
+                  "title": "The Locationid Schema",
+                  "description": "Reference Id of this location",
+                  "default": 0,
+                  "examples": [
+                    0
+                  ]
+                },
+                "locationAddress": {
+                  "$id": "/properties/userLocations/items/properties/locations/items/properties/locationAddress",
+                  "type": "string",
+                  "title": "The Locationaddress Schema",
+                  "description": "Location address",
+                  "default": "",
+                  "examples": [
+                    "4545E Fox Street, Phoenix, AZ 45554"
+                  ]
+                },
+                "locationName": {
+                  "$id": "/properties/userLocations/items/properties/locations/items/properties/locationName",
+                  "type": "string",
+                  "title": "The Locationname Schema",
+                  "description": "Location name - ex Youth hostel",
+                  "default": "",
+                  "examples": [
+                    " Youth Hostel"
+                  ]
+                },
+                "locationDescription": {
+                  "$id": "/properties/userLocations/items/properties/locations/items/properties/locationDescription",
+                  "type": "string",
+                  "title": "The Locationdescription Schema",
+                  "description": "Location description",
+                  "default": "",
+                  "examples": [
+                    "Travel Registry"
+                  ]
+                },
+                "locationLatitude": {
+                  "$id": "/properties/userLocations/items/properties/locations/items/properties/locationLatitude",
+                  "type": "string",
+                  "title": "The Locationlatitude Schema",
+                  "description": "Location latitude",
+                  "default": "",
+                  "examples": [
+                    "57.2019"
+                  ]
+                },
+                "locationLongitude": {
+                  "$id": "/properties/userLocations/items/properties/locations/items/properties/locationLongitude",
+                  "type": "string",
+                  "title": "The Locationlongitude Schema",
+                  "description": "Location Longtidue",
+                  "default": "",
+                  "examples": [
+                    "-3.19778"
+                  ]
+                },
+                "locationIataCode": {
+                  "$id": "/properties/userLocations/items/properties/locations/items/properties/locationIataCode",
+                  "type": "string",
+                  "title": "The Locationiatacode Schema",
+                  "description": "nearest iata code for this location",
+                  "default": "",
+                  "examples": [
+                    ""
+                  ]
+                },
+                "startDate": {
+                  "$id": "/properties/userLocations/items/properties/locations/items/properties/startDate",
+                  "type": "string",
+                  "title": "The Startdate Schema",
+                  "description": "Start date of the trip or stay",
+                  "default": "",
+                  "examples": [
+                    "2017-11-02T12:07"
+                  ]
+                },
+                "endDate": {
+                  "$id": "/properties/userLocations/items/properties/locations/items/properties/endDate",
+                  "type": "string",
+                  "title": "The Enddate Schema",
+                  "description": "Enddate of the trip or stay",
+                  "default": "",
+                  "examples": [
+                    "2017-11-02T12:07"
+                  ]
+                },
+                "timezoneId": {
+                  "$id": "/properties/userLocations/items/properties/locations/items/properties/timezoneId",
+                  "type": "string",
+                  "title": "The Timezoneid Schema",
+                  "description": "TimezoneId(Joda)",
+                  "default": "",
+                  "examples": [
+                    "Europe/London"
+                  ]
+                },
+                "locationPhone": {
+                  "$id": "/properties/userLocations/items/properties/locations/items/properties/locationPhone",
+                  "type": "string",
+                  "title": "The Locationphone Schema",
+                  "description": "phone number",
+                  "default": "",
+                  "examples": [
+                    "string"
+                  ]
+                },
+                "visitorId": {
+                  "$id": "/properties/userLocations/items/properties/locations/items/properties/visitorId",
+                  "type": "array",
+                  "items": {
+                    "$id": "/properties/userLocations/items/properties/locations/items/properties/visitorId/items",
+                    "type": "integer",
+                    "title": "The 0 Schema",
+                    "description": "Reference id of a user",
+                    "default": 0,
+                    "examples": [
+                      0
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "sourcePartner": {
+            "$id": "/properties/userLocations/items/properties/sourcePartner",
+            "type": "object",
+            "properties": {
+              "id": {
+                "$id": "/properties/userLocations/items/properties/sourcePartner/properties/id",
+                "type": "string",
+                "title": "The Id Schema",
+                "description": "partner id",
+                "default": "",
+                "examples": [
+                  "TD"
+                ]
+              },
+              "name": {
+                "$id": "/properties/userLocations/items/properties/sourcePartner/properties/name",
+                "type": "string",
+                "title": "The Name Schema",
+                "description": "Partner name",
+                "default": "",
+                "examples": [
+                  "Terra Dotta"
+                ]
+              },
+              "description": {
+                "$id": "/properties/userLocations/items/properties/sourcePartner/properties/description",
+                "type": "string",
+                "title": "The Description Schema",
+                "description": "description",
+                "default": "",
+                "examples": [
+                  "Universities stuff"
+                ]
+              }
+            }
+          },
+          "transaction": {
+            "$id": "/properties/userLocations/items/properties/transaction",
+            "type": "object",
+            "properties": {
+              "transactionId": {
+                "$id": "/properties/userLocations/items/properties/transaction/properties/transactionId",
+                "type": "string",
+                "title": "The Transactionid Schema",
+                "description": " a unique transaction id of the request",
+                "default": "",
+                "examples": [
+                  "Nui-API"
+                ]
+              },
+              "createdDate": {
+                "$id": "/properties/userLocations/items/properties/transaction/properties/createdDate",
+                "type": "string",
+                "title": "The Createddate Schema",
+                "description": "created date of this request",
+                "default": "",
+                "examples": [
+                  "2017-11-02T12:05"
+                ]
+              },
+              "transactionType": {
+                "$id": "/properties/userLocations/items/properties/transaction/properties/transactionType",
+                "type": "string",
+                "title": "The Transactiontype Schema",
+                "description": "Transaction type to indicate whether to add or cancel the location request",
+                "default": "",
+                "examples": [
+                  "Cancel"
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+ 
+ 
+Parameters
+ 
+"client": {
+        "id": "CTG", 
+        "firstSubLevel": "Test_SL1_Demo", 
+        "secondSubLevel": "Test_SL2_Demo"
+      },
+ 
+Id: This maps to the top-level corporation and must be configured in the locate service before sending location data to the API service Ex Concur
+firstSubLevel: This is the child corporation one level below the aforementioned top level corporation. E.g Concur UK
+ 
+secondSubLevel: This the sub level of the aforementioned child corporation. E.g Concur Maidenhead.
+ 
+If there is no sublevel in the feed the traveller will be identified / created at the top level (e.g under Concur)
+ 
+The hierarchy in the above example created (if not already present) would be:
+Concur à Concur UK à Concur Maidenhead
+ 
+ 
+"users": [
+        {
+          "userId": 0,
+          "firstName": "Test",
+          "lastName": "User",
+          "email": "clientOneXML@tuser.com",
+          "employeeId": "Cli123",
+          "mobileCountryCode": "string",
+          "mobile": "442345623456",
+          "optedIn": true,
+          "concurLoginId": "",
+          "affiliation": "Student"
+        }
+      ],
+This section contains a list of travellers for the corporation hierarchy in the “client” section of the feed along with the details of each traveller
+Most of the fields here are self-explanatory.
+userId: This is to reference to the user from the “location” section of the feed.
+concurLoginId: If the user has access to the concur systems then this field will be populated with concur login id.
+affiliation: This field is to determine the type of traveller (e.g Student, Faculty etc)  
+ 
+If the traveller does not have a concur login id, then the email field will be used to create/identify the traveller. Alternatively, if the user has a concur login id then that field will be used to create / identify the traveller. So, one of those two fields must be present in the feed.
+ 
+ 
+"locations": [
+        {
+          "locationId": 0,
+          "locationAddress": "address, city, state postcode",
+          "locationName": "LocationName",
+          "locationDescription": "Travel Reg",
+          "locationPhone": "+14056776789",
+          "locationLatitude": "57.2019",
+          "locationLongitude": "-3.19778",
+          "locationIataCode": "",
+          "startDate": "2017-11-02T12:07",
+          "endDate": "2017-11-02T12:07",
+          "timezoneId": "Europe/London",
+          "visitorId": [
+            0
+          ]
+        }
+      ],
+This section of the feed gives information about the location, the traveller is travelling to.
+ 
+Either the location latitude / longitude or the location IATA (airport) code must be present in the feed. If both are present then the lat / long will take precedence. 
+ 
+visitorId: The list of visitor ids correspond to the userId field  in the “users” section of the feed. This indicates the travellers present in the given location. 
+ 
+ 
+"sourcePartner": {
+        "id": "TD",
+        "name": "Terra Dotta",
+        "description": "Universities stuff"
+      },
+This section is for partner details and must be configured in the locate service before sending data for any configured client in the locate service.
+ 
+"transaction": {
+        "transactionId": "Trans1234",
+        "createdDate": "2017-11-02T12:05",
+        "transactionType": "Cancel"
+      }
+This section is to uniquely identify the data for a particular client as defined in the “client” section of the feed.
+Possible values for transactionType:
+·        Add
+·        Cancel
+ 
+Sample JSON requests
+Request1
+{
+  "userLocations": [
+    {
+       "client": {
+        "id": "CTG",
+        "firstSubLevel": "Test_SL1_Demo",
+        "secondSubLevel": "Test_SL2_Demo"
+      },
+      "users": [
+        {
+           "userId": 0,
+          "firstName": "Test",
+          "lastName": "User",
+          "email": "clientOneXML@tuser.com",
+          "employeeId": "Cli123",
+          "mobileCountryCode": "string",
+          "mobile": "442345623456",
+          "optedIn": true,
+          "concurLoginId": "",
+"affiliation": "Student"
+        }
+      ],
+      "locations": [
+        {
+          "locationId": 0,
+          "locationAddress": "Off Fox Street, Landstown AZ 45456",
+          "locationName": "Youth Hostel",
+          "locationDescription": "Travel Stuff",
+          "locationLatitude": "57.2019",
+          "locationLongitude": "-3.19778",
+          "locationIataCode": "",
+          "startDate": "2017-11-02T12:07",
+          "endDate": "2017-11-02T12:07",
+          "timezoneId": "Europe/London",
+          "locationPhone": "string",
+          "visitorId": [
+            0
+          ]
+        }
+      ],
+      "sourcePartner": {
+         "id": "TD",
+        "name": "Terra Dotta",
+        "description": "Universities stuff"
+      },
+      "transaction": {
+        "transactionId": "Nui-API",
+        "createdDate": "2017-11-02T12:05",
+        "transactionType": "Add"
+      }
+    }
+  ]
+}
+Request2
+{
+  "userLocations": [
+    {
+       "client": {
+        "id": "CTG",
+        "firstSubLevel": "Test_SL1_Demo",
+        "secondSubLevel": "Test_SL2_Demo"
+      },
+      "users": [
+        {
+           "userId": 0,
+          "firstName": "Test",
+          "lastName": "User",
+          "email": "clientOneXML@tuser.com",
+          "employeeId": "Cli123",
+          "mobileCountryCode": "string",
+          "mobile": "442345623456",
+          "optedIn": true,
+          "concurLoginId": "",
+"affiliation": "Student"
+        }
+      ],
+      "locations": [
+        {
+          "locationId": 0,
+          "locationAddress": "Off Fox Street, Landstown AZ 45456",
+          "locationName": "Youth Hostel",
+          "locationDescription": "Travel Stuff",
+          "locationLatitude": "57.2019",
+          "locationLongitude": "-3.19778",
+          "locationIataCode": "",
+          "startDate": "2017-11-02T12:07",
+          "endDate": "2017-11-02T12:07",
+          "timezoneId": "Europe/London",
+          "locationPhone": "string",
+          "visitorId": [
+            0
+          ]
+        }
+      ],
+      "sourcePartner": {
+         "id": "TD",
+        "name": "Terra Dotta",
+        "description": "Universities stuff"
+      },
+      "transaction": {
+        "transactionId": "Nui-API",
+        "createdDate": "2017-11-02T12:05",
+        "transactionType": "Cancel"
+      }
+    }
+  ]
+}
+ 
